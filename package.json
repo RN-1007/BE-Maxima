@@ -9,7 +9,15 @@
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:seed": "node prisma/seed.js",
-    "test": "node test/integration.test.js"
+    "test": "node test/runner.js",
+    "test:all": "node test/runner.js",
+    "test:auth": "node test/01_auth.test.js",
+    "test:farmers": "node test/02_farmers.test.js",
+    "test:trees": "node test/03_trees.test.js",
+    "test:fertilizations": "node test/04_fertilizations.test.js",
+    "test:ai": "node test/05_ai.test.js",
+    "test:harvests": "node test/06_harvests.test.js",
+    "test:traceability": "node test/07_traceability.test.js"
   },
   "repository": {
     "type": "git",

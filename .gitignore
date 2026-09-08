@@ -103,3 +103,13 @@ dist/
 build/
 coverage/
 .nyc_output/
+
+# =================================================================
+# DOKUMEN INTERNAL / TO-DO LIST SPRINT
+# =================================================================
+TODO.md
+todo.md
+TODO.txt
+todo.txt
+*.todo
+
