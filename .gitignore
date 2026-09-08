@@ -1,0 +1,105 @@
+# =================================================================
+# KEAMANAN & RAHASIA (ENV & CREDENTIALS) - SANGAT KETAT
+# =================================================================
+# Mengabaikan semua file environment berisi kredensial & JWT Secret
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Hanya izinkan template contoh (.env.example)
+!.env.example
+
+# Kunci kriptografi, sertifikat, dan token rahasia
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
+id_rsa*
+secrets/
+credentials/
+
+# =================================================================
+# DEPENDENSI NODE & PACKAGE MANAGERS
+# =================================================================
+node_modules/
+package-lock.json.bak
+.pnp
+.pnp.js
+
+# Log Debugging
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# =================================================================
+# DATABASE & DATA DUMP LOKAL
+# =================================================================
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+*.sql
+*.dump
+*.pgsql
+dev.db*
+
+# =================================================================
+# UPLOADS & FILE HASIL GENERASI (PDF & GAMBAR)
+# =================================================================
+# Mengabaikan seluruh file yang diunggah pengguna atau di-generate sistem
+uploads/*
+!uploads/.gitkeep
+!uploads/leaves/.gitkeep
+!uploads/pdf/.gitkeep
+
+# Batasi file media & PDF agar tidak tercommit secara tidak sengaja
+*.pdf
+# Izinkan aset gambar untuk testing di dalam test/fixtures/
+!test/fixtures/**
+
+# =================================================================
+# LOGS SISTEM & RUNTIME
+# =================================================================
+logs/
+*.log
+
+# =================================================================
+# EDITOR & SISTEM OPERASI (WINDOWS / MACOS / LINUX)
+# =================================================================
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Editor IDE & Temporary files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.bak
+
+# =================================================================
+# BUILD & TESTING ARTIFACTS
+# =================================================================
+dist/
+build/
+coverage/
+.nyc_output/

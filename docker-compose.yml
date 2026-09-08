@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: maxima_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: be_maxima
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: maxima_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      BASE_URL: http://localhost:3000
+      DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/be_maxima?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: 7d
+      AI_SERVICE_URL: http://fastapi-ai:8000/predict
+    volumes:
+      - uploads_data:/app/uploads
+    command: sh -c "npx prisma db push && node prisma/seed.js && node src/server.js"
+
+volumes:
+  postgres_data:
+    driver: local
+  uploads_data:
+    driver: local

@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("farmer") // "admin" | "farmer"
+  phone     String?
+  location  String?  // e.g. "Desa Bibis"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  trees     Tree[]
+  harvests  Harvest[]
+  aiLogs    AiLog[]
+
+  @@map("users")
+}
+
+model Tree {
+  id            String   @id @default(uuid())
+  treeCode      String   @unique // ID Pohon / Kode Blok
+  farmerId      String
+  farmer        User     @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  plantingDate  DateTime
+  healthStatus  String   @default("Sehat") // "Sehat" | "Sakit"
+  locationBlock String?  // Blok / baris lahan
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  fertilizations Fertilization[]
+  aiLogs         AiLog[]
+  harvests       Harvest[]
+
+  @@map("trees")
+}
+
+model Fertilization {
+  id             String    @id @default(uuid())
+  treeId         String
+  tree           Tree      @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  scheduledDate  DateTime
+  actualDate     DateTime?
+  fertilizerType String    // Jenis pupuk, misal "NPK Mutiara 16-16-16", "Pupuk Kandang/Organik"
+  status         String    @default("Pending") // "Pending" | "Selesai Dipupuk"
+  notes          String?
+  isSynced       Boolean   @default(true) // Menandai data sync dari offline IndexedDB
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("fertilizations")
+}
+
+model AiLog {
+  id         String   @id @default(uuid())
+  treeId     String
+  tree       Tree     @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  farmerId   String
+  farmer     User     @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  photoUrl   String
+  result     String   // "Healthy" atau nama penyakit (e.g., "Kanker Batang", "Hawar Daun")
+  confidence Float    // Persentase (0 - 100)
+  isSick     Boolean  @default(false)
+  detectedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@map("ai_logs")
+}
+
+model Harvest {
+  id              String    @id @default(uuid())
+  treeId          String
+  tree            Tree      @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  farmerId        String
+  farmer          User      @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  harvestDate     DateTime
+  estimatedFruits Int       @default(0)
+  notes           String?
+  status          String    @default("Pending") // "Pending" | "Verified"
+  batchId         String?   @unique             // Batch ID QR: e.g. "BATCH-P001-20260908"
+  qrPdfPath       String?                       // Path file PDF kumpulan stiker QR
+  verifiedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("harvests")
+}
