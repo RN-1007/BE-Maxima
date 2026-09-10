@@ -23,11 +23,11 @@ const flexibleUpload = (req, res, next) => {
   });
 };
 
-// POST /api/ai/detect - Petani uploads leaf photo for AI detection (FR-5)
+// POST /api/ai/detect - Petani & Admin uploads leaf photo for AI detection (FR-5)
 router.post(
   '/detect',
   authenticateToken,
-  requireRole(ROLES.FARMER),
+  requireRole(ROLES.FARMER, ROLES.ADMIN),
   flexibleUpload,
   aiController.detect
 );

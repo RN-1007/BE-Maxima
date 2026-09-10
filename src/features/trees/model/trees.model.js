@@ -136,6 +136,38 @@ const updateTreeHealth = async (id, healthStatus) => {
   });
 };
 
+/**
+ * Update tree details
+ * @param {string} id
+ * @param {Object} data
+ */
+const updateTree = async (id, data) => {
+  return await prisma.tree.update({
+    where: { id },
+    data,
+    include: {
+      farmer: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          location: true,
+        },
+      },
+    },
+  });
+};
+
+/**
+ * Delete tree by id
+ * @param {string} id
+ */
+const deleteTree = async (id) => {
+  return await prisma.tree.delete({
+    where: { id },
+  });
+};
+
 module.exports = {
   createTreeWithFertilizations,
   findTreeByCode,
@@ -143,4 +175,6 @@ module.exports = {
   findTreesByFarmerId,
   findAllTrees,
   updateTreeHealth,
+  updateTree,
+  deleteTree,
 };

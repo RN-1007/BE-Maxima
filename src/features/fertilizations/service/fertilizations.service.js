@@ -91,8 +91,41 @@ const syncFertilizations = async (farmerId, items) => {
   return result;
 };
 
+/**
+ * Get all fertilization schedules (Admin)
+ * @param {Object} query
+ */
+const getAllSchedules = async (query = {}) => {
+  const filter = {};
+  if (query.status) filter.status = query.status;
+  if (query.farmerId) filter.farmerId = query.farmerId;
+  if (query.treeId) filter.treeId = query.treeId;
+
+  const schedules = await fertilizationsModel.findAllSchedules(filter);
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  return schedules.map((item) => {
+    const schedDate = new Date(item.scheduledDate);
+    let timingStatus = 'Mendatang';
+    if (item.status === FERTILIZATION_STATUS.COMPLETED) {
+      timingStatus = 'Selesai';
+    } else if (schedDate < startOfToday) {
+      timingStatus = 'Terlambat (Overdue)';
+    } else if (schedDate.toDateString() === startOfToday.toDateString()) {
+      timingStatus = 'Hari Ini';
+    }
+
+    return {
+      ...item,
+      timingStatus,
+    };
+  });
+};
+
 module.exports = {
   getFarmerSchedule,
+  getAllSchedules,
   completeSchedule,
   syncFertilizations,
 };

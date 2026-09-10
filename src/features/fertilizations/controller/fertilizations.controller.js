@@ -41,8 +41,21 @@ const syncFertilizations = async (req, res, next) => {
   }
 };
 
+/**
+ * Get all fertilization schedules (Admin)
+ */
+const getAllSchedules = async (req, res, next) => {
+  try {
+    const schedules = await fertilizationsService.getAllSchedules(req.query);
+    return successResponse(res, 'Berhasil mengambil seluruh jadwal pemupukan kebun.', schedules);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getSchedule,
+  getAllSchedules,
   completeSchedule,
   syncFertilizations,
 };

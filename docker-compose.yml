@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: postgrespassword
       POSTGRES_DB: be_maxima
     ports:
-      - "5432:5432"
+      - "${POSTGRES_EXTERNAL_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -35,7 +35,7 @@ services:
       PORT: 3000
       BASE_URL: http://localhost:3000
       DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/be_maxima?schema=public
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: ${JWT_SECRET:-maxima_super_secret_jwt_key_2026}
       JWT_EXPIRES_IN: 7d
       AI_SERVICE_URL: http://fastapi-ai:8000/predict
     volumes:

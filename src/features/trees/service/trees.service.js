@@ -6,7 +6,7 @@ const { DEFAULT_FERTILIZATION_PLAN, TREE_HEALTH } = require('../../../config/con
  * @param {string} farmerId
  * @param {Object} payload
  */
-const addTree = async (farmerId, { treeCode, plantingDate, locationBlock }) => {
+const addTree = async (farmerId, { treeCode, plantingDate, locationBlock, variety, coordinates }) => {
   if (!treeCode || !plantingDate) {
     const error = new Error('ID Pohon (treeCode) dan Tanggal Ditanam (plantingDate) wajib diisi.');
     error.statusCode = 400;
@@ -44,12 +44,66 @@ const addTree = async (farmerId, { treeCode, plantingDate, locationBlock }) => {
       farmerId,
       plantingDate: parsedPlantingDate,
       locationBlock: locationBlock || null,
+      variety: variety || 'Jeruk Bali Merah',
+      coordinates: coordinates || '7°37\'42"S 111°26\'18"E',
       healthStatus: TREE_HEALTH.HEALTHY,
     },
     fertilizationSchedules
   );
 
   return newTree;
+};
+
+/**
+ * Admin add tree
+ * @param {Object} payload
+ */
+const adminAddTree = async (payload) => {
+  let targetFarmerId = payload.farmerId;
+  if (!targetFarmerId) {
+    const prisma = require('../../../config/database');
+    const defaultFarmer = await prisma.user.findFirst({ where: { role: 'farmer' } });
+    targetFarmerId = defaultFarmer ? defaultFarmer.id : payload.adminId;
+  }
+  return await addTree(targetFarmerId, payload);
+};
+
+/**
+ * Admin update tree
+ * @param {string} id
+ * @param {Object} data
+ */
+const adminUpdateTree = async (id, { treeCode, locationBlock, variety, coordinates, healthStatus }) => {
+  const tree = await treesModel.findTreeById(id);
+  if (!tree) {
+    const error = new Error('Pohon tidak ditemukan.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const updateData = {};
+  if (treeCode) updateData.treeCode = treeCode;
+  if (locationBlock !== undefined) updateData.locationBlock = locationBlock;
+  if (variety !== undefined) updateData.variety = variety;
+  if (coordinates !== undefined) updateData.coordinates = coordinates;
+  if (healthStatus) updateData.healthStatus = healthStatus;
+
+  return await treesModel.updateTree(id, updateData);
+};
+
+/**
+ * Admin delete tree
+ * @param {string} id
+ */
+const adminDeleteTree = async (id) => {
+  const tree = await treesModel.findTreeById(id);
+  if (!tree) {
+    const error = new Error('Pohon tidak ditemukan.');
+    error.statusCode = 404;
+    throw error;
+  }
+  await treesModel.deleteTree(id);
+  return { message: `Pohon '${tree.treeCode}' berhasil dihapus.` };
 };
 
 /**
@@ -92,7 +146,6 @@ const getAdminTrees = async ({ farmer_id, health_status, age }) => {
     if (!isNaN(ageDays)) {
       const targetDate = new Date();
       targetDate.setDate(targetDate.getDate() - ageDays);
-      // Trees planted on or before target date
       whereClause.plantingDate = {
         lte: targetDate,
       };
@@ -124,11 +177,21 @@ const getTreeById = async (id) => {
     error.statusCode = 404;
     throw error;
   }
-  return tree;
+  const now = new Date();
+  const ageInDays = Math.max(0, Math.floor((now - new Date(tree.plantingDate)) / (1000 * 60 * 60 * 24)));
+  const ageInMonths = +(ageInDays / 30.4375).toFixed(1);
+  return {
+    ...tree,
+    ageInDays,
+    ageInMonths,
+  };
 };
 
 module.exports = {
   addTree,
+  adminAddTree,
+  adminUpdateTree,
+  adminDeleteTree,
   getMyTrees,
   getAdminTrees,
   getTreeById,

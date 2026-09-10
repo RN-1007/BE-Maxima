@@ -6,9 +6,9 @@ const { successResponse } = require('../../../utils/response');
  */
 const detect = async (req, res, next) => {
   try {
-    const farmerId = req.user.id;
+    const user = req.user;
     const treeId = req.body.treeId || req.body.tree_id;
-    const result = await aiService.detectLeaf(farmerId, treeId, req.file);
+    const result = await aiService.detectLeaf(user, treeId, req.file);
     return successResponse(res, 'Deteksi AI berhasil diproses.', result, 201);
   } catch (error) {
     next(error);

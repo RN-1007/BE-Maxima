@@ -14,6 +14,16 @@ const login = async (req, res, next) => {
   }
 };
 
+const getMe = async (req, res, next) => {
+  try {
+    const result = await authService.getMe(req.user.id);
+    return successResponse(res, 'Berhasil mengambil profil pengguna.', result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   login,
+  getMe,
 };

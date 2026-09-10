@@ -66,12 +66,27 @@ const forwardToFastAPI = async (filePath, originalName) => {
 };
 
 /**
+ * Helper to determine AI alert severity
+ */
+const determineSeverity = (isSick, confidence, result = '') => {
+  if (!isSick) return 'low';
+  const lower = result.toLowerCase();
+  if (confidence >= 85 || lower.includes('kanker') || lower.includes('greening') || lower.includes('hlb')) {
+    return 'high';
+  }
+  return 'medium';
+};
+
+/**
  * Handle AI detection for a leaf photo (FR-5)
- * @param {string} farmerId
+ * @param {Object|string} user
  * @param {string} treeId
  * @param {Object} file
  */
-const detectLeaf = async (farmerId, treeId, file) => {
+const detectLeaf = async (user, treeId, file) => {
+  const userId = typeof user === 'object' ? user.id : user;
+  const userRole = typeof user === 'object' ? user.role : 'farmer';
+
   if (!treeId) {
     const error = new Error('treeId wajib disertakan.');
     error.statusCode = 400;
@@ -84,7 +99,7 @@ const detectLeaf = async (farmerId, treeId, file) => {
     throw error;
   }
 
-  // Verify tree exists and belongs to farmer
+  // Verify tree exists
   const tree = await treesModel.findTreeById(treeId);
   if (!tree) {
     const error = new Error('Pohon tidak ditemukan.');
@@ -92,11 +107,13 @@ const detectLeaf = async (farmerId, treeId, file) => {
     throw error;
   }
 
-  if (tree.farmerId !== farmerId) {
+  if (userRole !== 'admin' && tree.farmerId !== userId) {
     const error = new Error('Akses ditolak. Pohon ini bukan milik Anda.');
     error.statusCode = 403;
     throw error;
   }
+
+  const targetFarmerId = userRole === 'admin' ? tree.farmerId : userId;
 
   // Forward to FastAPI microservice (FR-5.2 & FR-5.3)
   const aiResult = await forwardToFastAPI(file.path, file.originalname);
@@ -109,7 +126,7 @@ const detectLeaf = async (farmerId, treeId, file) => {
   const savedLog = await aiModel.createAiLogAndUpdateTree(
     {
       treeId,
-      farmerId,
+      farmerId: targetFarmerId,
       photoUrl: relativePhotoUrl,
       result: aiResult.result,
       confidence: aiResult.confidence,
@@ -120,6 +137,7 @@ const detectLeaf = async (farmerId, treeId, file) => {
 
   return {
     ...savedLog,
+    severity: determineSeverity(savedLog.isSick, savedLog.confidence, savedLog.result),
     treeStatusUpdatedTo: newTreeStatus,
   };
 };
@@ -153,7 +171,11 @@ const syncAiDetectBatch = async (farmerId, logs) => {
  * @param {Object} query
  */
 const getAdminAiLogs = async (query) => {
-  return await aiModel.findAllAiLogs(query);
+  const logs = await aiModel.findAllAiLogs(query);
+  return logs.map((log) => ({
+    ...log,
+    severity: determineSeverity(log.isSick, log.confidence, log.result),
+  }));
 };
 
 module.exports = {

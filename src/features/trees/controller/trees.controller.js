@@ -51,8 +51,51 @@ const getTreeById = async (req, res, next) => {
   }
 };
 
+/**
+ * Admin add a new tree
+ */
+const adminAddTree = async (req, res, next) => {
+  try {
+    const payload = {
+      ...req.body,
+      adminId: req.user.id,
+    };
+    const tree = await treesService.adminAddTree(payload);
+    return successResponse(res, 'Pohon berhasil ditambahkan oleh Admin dan jadwal pemupukan berhasil di-generate.', tree, 201);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Admin update tree
+ */
+const adminUpdateTree = async (req, res, next) => {
+  try {
+    const updated = await treesService.adminUpdateTree(req.params.id, req.body);
+    return successResponse(res, 'Data pohon berhasil diperbarui.', updated);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Admin delete tree
+ */
+const adminDeleteTree = async (req, res, next) => {
+  try {
+    const result = await treesService.adminDeleteTree(req.params.id);
+    return successResponse(res, result.message, null);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   addTree,
+  adminAddTree,
+  adminUpdateTree,
+  adminDeleteTree,
   getMyTrees,
   getAdminTrees,
   getTreeById,

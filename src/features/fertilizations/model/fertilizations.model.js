@@ -141,8 +141,54 @@ const syncBatchFertilizations = async (items) => {
   return results;
 };
 
+/**
+ * Get all fertilization schedules (Admin)
+ * @param {Object} [filter]
+ */
+const findAllSchedules = async (filter = {}) => {
+  const whereClause = {};
+
+  if (filter.status) {
+    whereClause.status = filter.status;
+  }
+
+  if (filter.farmerId) {
+    whereClause.tree = {
+      farmerId: filter.farmerId,
+    };
+  }
+
+  if (filter.treeId) {
+    whereClause.treeId = filter.treeId;
+  }
+
+  return await prisma.fertilization.findMany({
+    where: whereClause,
+    include: {
+      tree: {
+        select: {
+          id: true,
+          treeCode: true,
+          locationBlock: true,
+          healthStatus: true,
+          variety: true,
+          farmer: {
+            select: {
+              id: true,
+              name: true,
+              location: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: { scheduledDate: 'asc' },
+  });
+};
+
 module.exports = {
   findSchedulesByFarmerId,
+  findAllSchedules,
   findFertilizationById,
   markCompleted,
   syncBatchFertilizations,

@@ -65,6 +65,8 @@ async function main() {
       plantingDate: plantingDate1,
       healthStatus: 'Sehat',
       locationBlock: 'Blok A-01',
+      variety: 'Jeruk Bali Merah',
+      coordinates: '7°37\'42"S 111°26\'18"E',
     },
   });
 
@@ -140,6 +142,8 @@ async function main() {
       plantingDate: plantingDate2,
       healthStatus: 'Sakit',
       locationBlock: 'Blok B-03',
+      variety: 'Jeruk Bali Putih',
+      coordinates: '7°37\'45"S 111°26\'22"E',
     },
   });
 

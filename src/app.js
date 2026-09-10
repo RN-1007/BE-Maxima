@@ -12,6 +12,8 @@ const farmersRoutes = require('./features/farmers/farmers.routes');
 const treesRoutes = require('./features/trees/trees.routes');
 const adminTreesRoutes = require('./features/trees/admin-trees.routes');
 const fertilizationsRoutes = require('./features/fertilizations/fertilizations.routes');
+const adminFertilizationsRoutes = require('./features/fertilizations/admin-fertilizations.routes');
+const dashboardRoutes = require('./features/dashboard/dashboard.routes');
 const { aiRouter } = require('./features/ai/ai.routes');
 const adminAiRoutes = require('./features/ai/admin-ai.routes');
 const harvestsRoutes = require('./features/harvests/harvests.routes');
@@ -49,12 +51,16 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/admin/farmers', farmersRoutes);
 
+// Admin Dashboard & Global Analytics
+app.use('/api/admin/dashboard', dashboardRoutes);
+
 // 2. Manajemen Pohon & Lahan (Siklus Awal)
 app.use('/api/trees', treesRoutes);
 app.use('/api/admin/trees', adminTreesRoutes);
 
 // 3. Jadwal & Log Pemupukan
 app.use('/api/fertilizations', fertilizationsRoutes);
+app.use('/api/admin/fertilizations', adminFertilizationsRoutes);
 
 // 4. Deteksi AI & Monitoring Penyakit (Siklus Tengah)
 app.use('/api/ai', aiRouter);

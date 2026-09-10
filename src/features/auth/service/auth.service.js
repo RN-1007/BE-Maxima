@@ -52,6 +52,17 @@ const login = async (email, password) => {
   };
 };
 
+const getMe = async (userId) => {
+  const user = await authModel.findUserById(userId);
+  if (!user) {
+    const error = new Error('Pengguna tidak ditemukan.');
+    error.statusCode = 404;
+    throw error;
+  }
+  return user;
+};
+
 module.exports = {
   login,
+  getMe,
 };
