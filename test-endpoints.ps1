@@ -390,17 +390,22 @@ if (-not (Test-Path $fixturePath)) {
 
 if ($createdTreeId) {
     try {
-        # Upload foto daun oleh Admin/Petani via curl.exe
+        # Upload foto daun oleh Admin/Petani via curl.exe (Two-Step Verification AI)
         $curlOutput = & curl.exe -s -X POST "$BaseUrl/api/ai/detect" `
             -H "Authorization: Bearer $adminToken" `
             -F "treeId=$createdTreeId" `
             -F "photo=@$fixturePath;filename=leaf-sample-healthy.jpg"
         
         $aiDetectData = $curlOutput | ConvertFrom-Json
-        $aiPassed = ($aiDetectData.success -eq $true -and $aiDetectData.data.result)
-        Record-Test -name "POST /api/ai/detect (FR-5 & Severity)" -passed $aiPassed -details "Hasil: $($aiDetectData.data.result) (Severity: $($aiDetectData.data.severity))"
+        $aiPassed = ($aiDetectData.success -eq $true -and $aiDetectData.data.result -ne $null)
+        
+        # Validasi field baru hasil integrasi Flask AI (diseaseDetail, gatekeeper, classId)
+        $hasEnrichment = ($aiDetectData.data.gatekeeper -ne $null -or $aiDetectData.data.diseaseDetail -ne $null -or $aiDetectData.data.classId -ne $null)
+        $detailInfo = "Hasil: $($aiDetectData.data.result) | Gatekeeper: $(if ($aiDetectData.data.gatekeeper.lulus) {'Lulus'} else {'N/A'}) | Severity: $($aiDetectData.data.severity)"
+        
+        Record-Test -name "POST /api/ai/detect (Two-Step AI & DB Sync)" -passed ($aiPassed -and $hasEnrichment) -details $detailInfo
     } catch {
-        Record-Test -name "POST /api/ai/detect (FR-5 & Severity)" -passed $false -details $_.Exception.Message
+        Record-Test -name "POST /api/ai/detect (Two-Step AI & DB Sync)" -passed $false -details $_.Exception.Message
     }
 
     # 6.2 FR-3 Batch Sync AI Logs
