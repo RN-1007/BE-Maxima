@@ -1,6 +1,6 @@
 # 🌿 BE-Maxima (Smart Agriculture & AI Traceability Backend)
 
-> Backend RESTful API untuk ekosistem perkebunan durian/buah Maxima berbasis **Express.js**, **Prisma ORM**, dan **PostgreSQL**. Menerapkan prinsip **Clean Code Modular Per-Fitur** (`model/`, `service/`, `controller/`), AI Gateway ke microservice FastAPI, PDF Generator stiker QR Code panen, dan kontainerisasi Docker.
+> Backend RESTful API untuk ekosistem perkebunan Jeruk Bali / Pamelo Magetan Maxima berbasis **Express.js**, **Prisma ORM**, dan **PostgreSQL**. Menerapkan prinsip **Clean Code Modular Per-Fitur** (`model/`, `service/`, `controller/`), AI Gateway ke Microservice Python AI Engineer, Chatbot Asisten Maxist Multimodal dengan integrasi *DB Context*, PDF Generator stiker QR Code panen, dan kontainerisasi Docker.
 
 ---
 
@@ -11,8 +11,10 @@
    - [2. Manajemen Pohon & Lahan (Siklus Awal)](#2-manajemen-pohon--lahan-siklus-awal)
    - [3. Jadwal Pemupukan & Offline Sync](#3-jadwal-pemupukan--offline-sync)
    - [4. Deteksi AI & Monitoring Penyakit (Siklus Tengah)](#4-deteksi-ai--monitoring-penyakit-siklus-tengah)
-   - [5. Lapor Panen & Cetak QR Code (Siklus Akhir)](#5-lapor-panen--cetak-qr-code-siklus-akhir)
-   - [6. Scan Konsumen & Traceability Journey (Publik)](#6-scan-konsumen--traceability-journey-publik)
+   - [5. Chatbot Asisten Maxist (Multimodal & DB Context)](#5-chatbot-asisten-maxist-multimodal--db-context)
+   - [6. Lapor Panen & Cetak QR Code (Siklus Akhir)](#6-lapor-panen--cetak-qr-code-siklus-akhir)
+   - [7. Scan Konsumen & Traceability Journey (Publik)](#7-scan-konsumen--traceability-journey-publik)
+   - [8. Dashboard & Analitik Admin](#8-dashboard--analitik-admin)
 2. [Arsitektur Clean Code Modular](#-arsitektur-clean-code-modular)
 3. [Panduan Skema Pengujian Otomasi (Test Suite)](#-panduan-skema-pengujian-otomasi-test-suite)
 4. [Menjalankan dengan Docker & Database](#-menjalankan-dengan-docker--database)
@@ -80,38 +82,19 @@
         "name": "Budi Santoso",
         "role": "farmer",
         "phone": "081298765432",
-        "location": "Desa Bibis, Blok Utara"
+        "location": "Desa Bibis, Magetan"
       }
     }
   }
   ```
-- **Catatan FE:** Simpan `token` di `localStorage` atau secure cookie untuk dikirimkan pada header `Authorization: Bearer <token>` di setiap request selanjutnya.
 
----
+#### `GET /api/auth/me`
+- **Aktor:** Authenticated (Admin/Petani)
+- **Fungsi:** Memeriksa sesi dan profil pengguna aktif dari token JWT.
 
 #### `GET /api/admin/farmers`
 - **Aktor:** Admin Only
 - **Fungsi:** Mengambil daftar semua petani beserta profil, lokasi, dan jumlah pohon miliknya.
-- **Response 200 (OK):**
-  ```json
-  {
-    "success": true,
-    "message": "Berhasil mengambil daftar akun petani.",
-    "data": [
-      {
-        "id": "c1f76d90-a54b-4c4b-8fd1-253380e224e7",
-        "name": "Budi Santoso",
-        "email": "petani1@maxima.com",
-        "role": "farmer",
-        "phone": "081298765432",
-        "location": "Desa Bibis, Blok Utara",
-        "_count": { "trees": 3, "harvests": 1 }
-      }
-    ]
-  }
-  ```
-
----
 
 #### `POST /api/admin/farmers`
 - **Aktor:** Admin Only
@@ -123,86 +106,37 @@
     "email": "joko@maxima.com",
     "password": "Password123!",
     "phone": "08123456789",
-    "location": "Desa Bibis, Blok Timur"
+    "location": "Desa Bibis, Magetan"
   }
   ```
-- **Response 201 (Created):** Mengembalikan data petani yang baru terdaftar.
 
----
-
-#### `PUT /api/admin/farmers/:id`
-- **Aktor:** Admin Only
-- **Fungsi:** Mengubah profil/lokasi/password akun petani.
-
----
-
-#### `DELETE /api/admin/farmers/:id`
-- **Aktor:** Admin Only
-- **Fungsi:** Menghapus akun petani.
+#### `PUT /api/admin/farmers/:id` & `DELETE /api/admin/farmers/:id`
+- **Aktor:** Admin Only (Update profil & hapus akun petani).
 
 ---
 
 ### 2. Manajemen Pohon & Lahan (Siklus Awal)
 
-#### `POST /api/trees`
-- **Aktor:** Petani
+#### `POST /api/trees` (Petani) & `POST /api/admin/trees` (Admin)
 - **Fungsi:** Menambah pohon/blok baru.
-- **FR-1 (Otomatisasi Jadwal):** Backend **otomatis** membuat rencana pemupukan (Day 7, 30, 60, 90, 180) di tabel jadwal saat endpoint ini dipanggil!
+- **FR-1 (Otomatisasi Jadwal):** Backend **otomatis** membuat 5 rencana pemupukan (Day 7, 30, 60, 90, 180) di tabel jadwal saat endpoint ini dipanggil!
 - **Request Body:**
   ```json
   {
     "treeCode": "PHN-BBS-010",
     "plantingDate": "2026-03-01",
-    "locationBlock": "Blok A-02"
+    "locationBlock": "Blok A-02",
+    "variety": "Jeruk Bali Merah",
+    "coordinates": "7°37'42\"S 111°26'18\"E"
   }
   ```
-- **Response 201 (Created):**
-  ```json
-  {
-    "success": true,
-    "message": "Pohon berhasil ditambahkan dan jadwal pemupukan berhasil di-generate.",
-    "data": {
-      "id": "3d5ba4c2-9cf5-4e08-ba90-27f9919f187a",
-      "treeCode": "PHN-BBS-010",
-      "healthStatus": "Sehat",
-      "plantingDate": "2026-03-01T00:00:00.000Z",
-      "locationBlock": "Blok A-02",
-      "fertilizations": [
-        { "id": "uuid-1", "scheduledDate": "2026-03-08", "fertilizerType": "Pupuk Dasar Organik / Kompos Matang", "status": "Pending" },
-        { "id": "uuid-2", "scheduledDate": "2026-03-31", "fertilizerType": "NPK 16-16-16 (Masa Vegetatif Awal)", "status": "Pending" }
-      ]
-    }
-  }
-  ```
-
----
 
 #### `GET /api/trees/my-trees`
 - **Aktor:** Petani
 - **Fungsi:** Mengambil data pohon milik petani yang login (**FR-2 Isolasi Data**).
-- **Response 200 (OK):**
-  ```json
-  {
-    "success": true,
-    "data": [
-      {
-        "id": "3d5ba4c2-9cf5-4e08-ba90-27f9919f187a",
-        "treeCode": "PHN-BBS-010",
-        "healthStatus": "Sehat",
-        "plantingDate": "2026-03-01T00:00:00.000Z",
-        "locationBlock": "Blok A-02",
-        "ageInDays": 7,
-        "ageInMonths": 0.2
-      }
-    ]
-  }
-  ```
-
----
 
 #### `GET /api/admin/trees`
 - **Aktor:** Admin Only
-- **Fungsi:** Rekapitulasi global seluruh pohon dari semua petani.
 - **Query Filter Opsional:** `?farmer_id=...&health_status=Sehat&age=30`
 
 ---
@@ -211,134 +145,109 @@
 
 #### `GET /api/fertilizations/schedule`
 - **Aktor:** Petani
-- **Fungsi:** Menampilkan to-do list pemupukan (kalender/daftar) milik petani.
-- **Response 200 (OK):**
-  ```json
-  {
-    "success": true,
-    "data": [
-      {
-        "id": "8b51d8b7-66a9-4673-9a3d-6b0451cfbfbe",
-        "treeId": "3d5ba4c2-...",
-        "scheduledDate": "2026-03-08T00:00:00.000Z",
-        "fertilizerType": "Pupuk Dasar Organik",
-        "status": "Pending",
-        "timingStatus": "Hari Ini", // "Hari Ini" | "Mendatang" | "Terlambat (Overdue)" | "Selesai"
-        "tree": { "treeCode": "PHN-BBS-010", "locationBlock": "Blok A-02" }
-      }
-    ]
-  }
-  ```
-
----
+- **Fungsi:** Menampilkan to-do list pemupukan (kalender/daftar) milik petani dengan kalkulasi status waktu (`"Hari Ini"`, `"Mendatang"`, `"Terlambat (Overdue)"`, `"Selesai"`).
 
 #### `PUT /api/fertilizations/:id/complete`
 - **Aktor:** Petani
 - **Fungsi:** Tandai pemupukan selesai dan catat tanggal aktual.
-- **Request Body:**
-  ```json
-  {
-    "actualDate": "2026-03-08",
-    "notes": "Diaplikasikan 500 gram per lubang tanam"
-  }
-  ```
-- **Response 200 (OK):** `status` berubah menjadi `"Selesai Dipupuk"`.
-
----
 
 #### `POST /api/sync/fertilizations`
 - **Aktor:** Petani (**FR-3 Offline Sync**)
-- **Fungsi:** Endpoint batch menerima array data yang disimpan di IndexedDB saat offline.
-- **Request Body (Array):**
-  ```json
-  [
-    {
-      "treeId": "3d5ba4c2-...",
-      "scheduledDate": "2026-03-08",
-      "actualDate": "2026-03-08",
-      "fertilizerType": "Pupuk Kandang",
-      "notes": "Dicatat offline di kebun"
-    }
-  ]
-  ```
+- **Fungsi:** Batch sync data pemupukan yang disimpan di IndexedDB saat offline.
 
 ---
 
 ### 4. Deteksi AI & Monitoring Penyakit (Siklus Tengah)
 
 #### `POST /api/ai/detect`
-- **Aktor:** Petani
+- **Aktor:** Petani & Admin
 - **Content-Type:** `multipart/form-data`
-- **FR-5 (AI Gateway):**
-  1. Validasi ukuran file (< 5MB).
-  2. Forward ke FastAPI Microservice (dengan fallback).
-  3. Simpan log deteksi ke database.
-  4. Otomatis ubah status pohon menjadi **"Sakit"** jika terdeteksi penyakit, atau **"Sehat"** jika sehat/pulih.
+- **FR-5 (AI Gateway & Two-Step Gatekeeper):**
+  1. Validasi ukuran file foto (< 5MB).
+  2. Forward ke Microservice AI Engineer (dengan verifikasi Satpam Daun Jeruk Bali).
+  3. Simpan log deteksi ke database (`ai_logs`).
+  4. Otomatis perbarui status pohon menjadi **"Sakit"** jika terdeteksi penyakit, atau **"Sehat"** jika pulih.
 - **Form-Data Fields:**
-  - `treeId`: string (ID pohon yang difoto)
+  - `treeId`: string (ID pohon)
   - `photo`: File gambar (JPG/PNG/WebP, max 5MB)
-- **Response 201 (Created):**
-  ```json
-  {
-    "success": true,
-    "message": "Deteksi AI berhasil diproses.",
-    "data": {
-      "id": "log-uuid-1",
-      "photoUrl": "/uploads/leaves/leaf-1788882023549.jpg",
-      "result": "Daun Sehat (Healthy Plant)",
-      "confidence": 97.4,
-      "isSick": false,
-      "treeStatusUpdatedTo": "Sehat"
-    }
-  }
-  ```
-
----
 
 #### `POST /api/sync/ai-detect`
 - **Aktor:** Petani (**FR-3 Batch AI Sync**)
-- **Fungsi:** Kirim batch riwayat deteksi offline ke server saat kembali dapat sinyal internet.
-
----
+- **Fungsi:** Kirim batch riwayat deteksi offline ke server saat kembali tersambung internet.
 
 #### `GET /api/admin/ai-logs`
 - **Aktor:** Admin Only
-- **Fungsi:** Monitoring tren penyakit daun global seluruh kebun beserta persentase keyakinan AI.
+- **Fungsi:** Rekapitulasi log deteksi AI global dengan perhitungan tingkat keparahan penyakit (`severity`: `low`, `medium`, `high`).
 
 ---
 
-### 5. Lapor Panen & Cetak QR Code (Siklus Akhir)
+### 5. Chatbot Asisten Maxist (Multimodal & DB Context)
 
-#### `POST /api/harvests/report`
-- **Aktor:** Petani
-- **Fungsi:** Kirim laporan siap panen ke antrean verifikasi Admin.
+#### `POST /api/v1/chat`
+*(Alias Path: `POST /api/ai/chat` atau `POST /api/chat`)*
+
+- **Aktor:** Publik / Petani / Frontend App
+- **Content-Type:** `application/json`
+- **Fungsi:** Menghubungkan Frontend dengan AI Chatbot (Maxist). Backend secara otomatis mengambil data historis kebun dari PostgreSQL (jika `treeId` dikirim) untuk dijadikan `db_context` lalu mem-forward request ke Microservice AI Engineer (`AI_CHAT_URL`).
 - **Request Body:**
   ```json
   {
-    "treeId": "3d5ba4c2-...",
-    "harvestDate": "2026-03-25",
-    "estimatedFruits": 45,
-    "notes": "Durian montong kualitas super"
+    "message": "Bagaimana cara penanganan bercak ganggang pada daun jeruk bali saya?",
+    "db_context": "Hasil scan terakhir: Terindikasi Bercak Ganggang (Cephaleuros virescens) dengan keyakinan 98.45%.",
+    "treeId": "c1f76d90-a54b-4c4b-8fd1-253380e224e7",
+    "image_url": "http://localhost:3000/uploads/leaves/scan_daun_pomelo.jpg",
+    "history": [
+      {
+        "role": "user",
+        "parts": ["Halo Maxist, saya petani jeruk bali."]
+      },
+      {
+        "role": "model",
+        "parts": ["Halo Bapak/Ibu Petani! Senang bertemu Anda. Ada yang bisa Maxist bantu seputar tanaman jeruk bali Anda?"]
+      }
+    ]
   }
   ```
-- **Response 201 (Created):** Status panen otomatis menjadi `"Pending"`.
+- **Response 200 (OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "reply": "Halo Bapak/Ibu Petani! Berdasarkan kondisi pohon dan hasil diagnosis Bercak Ganggang, langkah penanganan yang disarankan adalah pangkas daun terinfeksi dan semprotkan fungisida berbahan aktif tembaga..."
+    }
+  }
+  ```
+- **Response 400 (Bad Request):**
+  ```json
+  {
+    "status": "fail",
+    "message": "Parameter 'message' wajib diisi dan tidak boleh kosong."
+  }
+  ```
+- **Response 500 (Internal Server Error / AI Microservice Offline):**
+  ```json
+  {
+    "status": "error",
+    "message": "Layanan AI Chatbot (http://localhost:5000/api/v1/chat) tidak dapat dihubungi. Pastikan server AI Engineer sedang berjalan."
+  }
+  ```
 
 ---
+
+### 6. Lapor Panen & Cetak QR Code (Siklus Akhir)
+
+#### `POST /api/harvests/report`
+- **Aktor:** Petani
+- **Fungsi:** Kirim laporan siap panen ke antrean verifikasi Admin (status: `"Pending"`).
 
 #### `GET /api/admin/harvests`
 - **Aktor:** Admin Only
-- **Fungsi:** Mengambil antrean laporan panen (`Pending` atau `Verified`).
-- **Query Opsional:** `?status=Pending`
-
----
+- **Fungsi:** Mengambil daftar laporan panen (`Pending` atau `Verified`).
 
 #### `POST /api/admin/harvests/:id/verify-and-qr`
-- **Aktor:** Admin Only (**FR-4 Pembuatan Batch QR Code PDF**)
-- **Fungsi:** Verifikasi panen, generate Batch ID unik (`BATCH-IDPOHON-TANGGALPANEN`), dan meng-generate file **PDF berisi lembar stiker QR Code** siap cetak.
-- **Request Body (Opsional):**
-  ```json
-  { "stickerCount": 6 }
-  ```
+- **Aktor:** Admin Only (**FR-4 Verifikasi Panen & Cetak QR PDF**)
+- **Fungsi:** Verifikasi panen, generate Batch ID unik (`BATCH-KODEPOHON-TANGGALPANEN-RANDOM`), dan menghasilkan file **PDF stiker QR Code** siap cetak.
+- **Request Body (Opsional):** `{ "stickerCount": 6 }`
 - **Response 200 (OK):**
   ```json
   {
@@ -348,107 +257,104 @@
       "status": "Verified",
       "batchId": "BATCH-PHNBBS010-20260325-1420",
       "traceUrl": "http://localhost:3000/api/public/trace/BATCH-PHNBBS010-20260325-1420",
-      "pdfDownloadUrl": "http://localhost:3000/uploads/pdf/batch-BATCH-PHNBBS010-20260325-1420-1788882023550.pdf"
+      "pdfDownloadUrl": "http://localhost:3000/uploads/pdf/batch-BATCH-PHNBBS010-20260325-1420.pdf"
     }
   }
   ```
-- **Catatan FE:** Tombol *Download PDF* di dashboard admin cukup mengarahkan `window.open(data.pdfDownloadUrl)`.
 
 ---
 
-### 6. Scan Konsumen & Traceability Journey (Publik)
+### 7. Scan Konsumen & Traceability Journey (Publik)
 
-#### `GET /api/public/trace/:batch_id`
+#### `GET /api/public/trace/:identifier`
 - **Aktor:** Konsumen Publik (Tanpa Login)
-- **Fungsi:** Endpoint yang dituju saat konsumen memindai stiker QR Code pada buah durian.
+- **Fungsi:** Endpoint pencarian ganda (*Dual-Lookup*) berdasarkan **Batch ID** atau **Kode Pohon**.
 - **Gerbang Logika AI:**
-  1. Cek seluruh riwayat pohon dari tanggal tanam hingga panen.
-  2. Jika pohon terdeteksi "Sakit" dan **tidak ada** verifikasi pulih sesudahnya:
-     ```json
-     {
-       "success": false,
-       "warning": "⚠️ Peringatan: Produk Tidak Memenuhi Standar Mutu AI",
-       "message": "Produk dari batch ini teridentifikasi memiliki riwayat penyakit pohon yang belum terbukti pulih sebelum masa panen.",
-       "data": {
-         "batchId": "BATCH-SICK-20260320",
-         "status": "DITOLAK_MUTU_AI"
-       }
-     }
-     ```
-  3. Jika "Sehat": Menampilkan seluruh riwayat mutu produk:
-     ```json
-     {
-       "success": true,
-       "data": {
-         "passed": true,
-         "batchId": "BATCH-PHNBBS010-20260325-1420",
-         "treeCode": "PHN-BBS-010",
-         "farmerName": "Budi Santoso",
-         "location": "Desa Bibis, Blok Utara",
-         "plantingDate": "2026-01-10T00:00:00.000Z",
-         "harvestDate": "2026-03-25T00:00:00.000Z",
-         "fertilizationSummary": {
-           "totalScheduled": 5,
-           "totalCompleted": 3,
-           "history": [
-             { "fertilizerType": "Pupuk Dasar Organik", "actualDate": "2026-01-17" }
-           ]
-         },
-         "lastAiVerification": {
-           "status": "Sehat / Layak Konsumsi",
-           "confidence": "97.4%",
-           "detectedAt": "2026-03-15T00:00:00.000Z"
-         }
-       }
-     }
-     ```
+  - Jika pohon terdeteksi "Sakit" dan belum ada bukti log pemulihan sebelum panen, produk ditolak (`status: "DITOLAK_MUTU_AI"`) dan data identitas petani disembunyikan.
+  - Jika "Sehat", menyajikan *Rich Digital Timeline Journey* (pembibitan, irigasi, pemupukan, verifikasi AI, hingga panen) beserta koordinat GPS kebun.
+
+---
+
+### 8. Dashboard & Analitik Admin
+
+#### `GET /api/admin/dashboard/stats`
+- **Fungsi:** Statistik ringkasan (Total Petani, Total Pohon, Persentase Kesehatan Pohon, Total Log AI).
+
+#### `GET /api/admin/dashboard/trend`
+- **Fungsi:** Tren grafik pemupukan dan deteksi penyakit bulanan.
+
+#### `GET /api/admin/dashboard/overview`
+- **Fungsi:** Ringkasan alert AI terkini dan agenda pemupukan mendatang.
 
 ---
 
 ## 🏛️ Arsitektur Clean Code Modular
 
 Proyek disusun dengan memisahkan domain per-fitur ke dalam folder `src/features/<nama-fitur>/`:
-- **`model/`**: Logika manipulasi data Prisma ORM dan database transaction.
-- **`service/`**: Logika bisnis murni (isolasi data, gateway FastAPI, kalkulasi usia pohon, gerbang mutu AI).
-- **`controller/`**: Penerimaan request HTTP, parsing payload, dan standardisasi response JSON.
+- **`model/`**: Logika Prisma ORM dan transaksi database.
+- **`service/`**: Logika bisnis (isolasi data, gateway AI Engineer, kalkulasi umur pohon, gerbang mutu AI, integrasi chatbot).
+- **`controller/`**: Parsing request HTTP dan penanganan format respon JSON.
 
 ```
 src/features/
-├── auth/           (model, service, controller)
-├── farmers/        (model, service, controller)
-├── trees/          (model, service, controller)
-├── fertilizations/ (model, service, controller)
-├── ai/             (model, service, controller)
-├── harvests/       (model, service, controller)
-└── traceability/   (model, service, controller)
+├── auth/           (model, service, controller, routes)
+├── farmers/        (model, service, controller, routes)
+├── trees/          (model, service, controller, routes)
+├── fertilizations/ (model, service, controller, routes)
+├── ai/             (model, service, controller, routes, chat.service, chat.controller)
+├── harvests/       (model, service, controller, routes)
+├── dashboard/      (model, service, controller, routes)
+└── traceability/   (model, service, controller, routes)
 ```
 
 ---
 
 ## 🧪 Panduan Skema Pengujian Otomasi (Test Suite)
 
-Proyek dilengkapi dengan skema pengujian otomatis end-to-end yang dapat dijalankan secara keseluruhan atau per-modul API:
+Proyek dilengkapi dengan skema pengujian otomatis end-to-end (100% Passed):
 
 | Perintah Terminal | Modul yang Diuji |
 |---|---|
 | `npm test` atau `npm run test:all` | **Menjalankan seluruh 7 modul suite secara berurutan** |
-| `npm run test:auth` | Uji Login Admin, Petani, Password salah, Validasi |
+| `npm run test:auth` | Uji Login Admin, Petani, Password salah, Validasi sesi |
 | `npm run test:farmers` | Uji RBAC larangan petani, CRUD Akun Petani oleh Admin |
 | `npm run test:trees` | Uji **FR-1** Auto Jadwal Pemupukan, **FR-2** Isolasi Data Petani |
 | `npm run test:fertilizations` | Uji To-do Pemupukan, Selesai Dipupuk, dan **FR-3** Batch Offline Sync |
-| `npm run test:ai` | Uji **FR-5** Upload Foto Daun (<5MB), AI Gateway, update status Sakit/Sehat |
+| `npm run test:ai` | Uji **FR-5** Upload Foto Daun (<5MB), Gateway Satpam AI, Chatbot `POST /api/v1/chat` |
 | `npm run test:harvests` | Uji Lapor Panen & **FR-4** Verifikasi Admin serta cetak PDF Stiker QR |
 | `npm run test:traceability` | Uji Scan Konsumen (Lolos Mutu Sehat vs Ditolak Mutu AI Sakit) |
+
+Atau jalankan skrip PowerShell otomatis:
+```powershell
+./test-endpoints.ps1
+```
 
 ---
 
 ## 🐳 Menjalankan dengan Docker & Database
 
+### Konfigurasi `.env` (Microservice AI Engineer):
+```env
+PORT=3000
+NODE_ENV=development
+BASE_URL=http://localhost:3000
+
+# Database Configuration (PostgreSQL)
+DATABASE_URL=postgresql://postgres:postgrespassword@localhost:5432/be_maxima?schema=public
+
+# JWT Authentication
+JWT_SECRET=maxima_super_secret_jwt_key_2026
+JWT_EXPIRES_IN=7d
+
+# Microservice Flask AI Service URL (Managed by AI Engineer)
+AI_SERVICE_URL=http://localhost:5000/api/v1/predict
+AI_CHAT_URL=http://localhost:5000/api/v1/chat
+```
+
 ### Menjalankan Seluruh Stack dengan Docker:
 ```bash
-docker compose up --build
+docker compose up -d --build
 ```
-*Container PostgreSQL dan backend Express akan otomatis terhubung, mengeksekusi migrasi tabel, dan melakukan seed data awal.*
 
 ### Kredensial Default:
 - **Admin:** `admin@maxima.com` / `Admin123!`
