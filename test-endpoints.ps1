@@ -428,6 +428,34 @@ $adminAiRes = Send-JsonRequest -Uri "$BaseUrl/api/admin/ai-logs" -Method "GET" -
 $hasSeverity = ($adminAiRes.Success -and $adminAiRes.Data.data.Count -gt 0 -and $adminAiRes.Data.data[0].severity -ne $null)
 Record-Test -name "GET /api/admin/ai-logs (Severity Support)" -passed $hasSeverity -details "Total Riwayat AI: $($adminAiRes.Data.data.Count) logs"
 
+# 6.4 Chatbot Maxist Validation Test (400 Bad Request if message empty)
+$emptyChatRes = Send-JsonRequest -Uri "$BaseUrl/api/v1/chat" -Method "POST" -Body @{
+    message = ""
+    db_context = "Pohon berumur 2 tahun"
+} -ExpectedStatus 400
+Record-Test -name "POST /api/v1/chat (Validation: Message Kosong 400)" -passed $emptyChatRes.Success -details "Status: fail (Validasi Berhasil)"
+
+# 6.5 Chatbot Maxist Interaksi dengan DB Context & Tree Context
+$chatPayload = @{
+    message    = "Bagaimana cara penanganan bercak ganggang pada daun jeruk bali saya?"
+    treeId     = $createdTreeId
+    db_context = "Hasil scan terakhir: Terindikasi Bercak Ganggang (Cephaleuros virescens) dengan keyakinan 98.45%."
+    history    = @(
+        @{
+            role  = "user"
+            parts = @("Halo Maxist, saya petani jeruk bali.")
+        },
+        @{
+            role  = "model"
+            parts = @("Halo Bapak/Ibu Petani! Senang bertemu Anda. Ada yang bisa Maxist bantu seputar tanaman jeruk bali Anda?")
+        }
+    )
+}
+$chatRes = Send-JsonRequest -Uri "$BaseUrl/api/v1/chat" -Method "POST" -Body $chatPayload -ExpectedStatus 200
+$chatPassed = ($chatRes.Success -and $chatRes.Data.status -eq "success" -and $chatRes.Data.data.reply -ne $null)
+$replyExcerpt = if ($chatRes.Data.data.reply) { $chatRes.Data.data.reply.Substring(0, [Math]::Min(60, $chatRes.Data.data.reply.Length)) + "..." } else { "Pesan error/missing API Key" }
+Record-Test -name "POST /api/v1/chat (Chatbot Maxist Multimodal + DB Context)" -passed $chatPassed -details "Respons: $replyExcerpt"
+
 # -------------------------------------------------------------
 # 7. Lapor Panen & Cetak QR Code (FR-4)
 # -------------------------------------------------------------

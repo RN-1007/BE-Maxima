@@ -20,6 +20,7 @@ const harvestsRoutes = require('./features/harvests/harvests.routes');
 const adminHarvestsRoutes = require('./features/harvests/admin-harvests.routes');
 const syncRoutes = require('./routes/sync.routes');
 const traceabilityRoutes = require('./features/traceability/traceability.routes');
+const chatRoutes = require('./features/ai/chat.routes');
 
 const app = express();
 
@@ -38,7 +39,7 @@ app.get('/', (req, res) => {
     status: 'online',
     service: 'BE-Maxima RESTful API',
     version: '1.0.0',
-    documentation: 'See TODO.md for endpoints specification',
+    documentation: 'See Readme.md for endpoints specification and requirement',
   });
 });
 
@@ -64,7 +65,13 @@ app.use('/api/admin/fertilizations', adminFertilizationsRoutes);
 
 // 4. Deteksi AI & Monitoring Penyakit (Siklus Tengah)
 app.use('/api/ai', aiRouter);
+app.use('/api/ai', chatRoutes);
 app.use('/api/admin/ai-logs', adminAiRoutes);
+
+// Chatbot Asisten Maxist (Multimodal & DB Context)
+app.use('/api/v1/chat', chatRoutes);
+app.use('/api/v1', chatRoutes);
+app.use('/api/chat', chatRoutes);
 
 // 5. Lapor Panen & Cetak QR Code (Siklus Akhir)
 app.use('/api/harvests', harvestsRoutes);

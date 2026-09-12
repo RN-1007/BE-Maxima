@@ -37,7 +37,10 @@ services:
       DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/be_maxima?schema=public
       JWT_SECRET: ${JWT_SECRET:-maxima_super_secret_jwt_key_2026}
       JWT_EXPIRES_IN: 7d
-      AI_SERVICE_URL: http://fastapi-ai:8000/predict
+      AI_SERVICE_URL: ${AI_SERVICE_URL:-http://host.docker.internal:5000/api/v1/predict}
+      AI_CHAT_URL: ${AI_CHAT_URL:-http://host.docker.internal:5000/api/v1/chat}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
     volumes:
       - uploads_data:/app/uploads
     command: sh -c "npx prisma db push && node prisma/seed.js && node src/server.js"
