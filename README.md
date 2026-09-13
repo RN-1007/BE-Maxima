@@ -26,6 +26,7 @@
 ### Konvensi Standar Request & Response
 
 - **Base URL Lokal:** `http://localhost:3000`
+- **Base URL Produksi:** `https://api.maximaa.tech`
 - **Default Header (JSON):**
   ```http
   Content-Type: application/json
@@ -110,8 +111,20 @@
   }
   ```
 
-#### `PUT /api/admin/farmers/:id` & `DELETE /api/admin/farmers/:id`
-- **Aktor:** Admin Only (Update profil & hapus akun petani).
+#### `PUT /api/admin/farmers/:id`
+- **Aktor:** Admin Only
+- **Fungsi:** Update profil/data petani.
+- **Request Body:**
+  ```json
+  {
+    "name": "Pak Joko Susanto",
+    "phone": "081299998888",
+    "location": "Desa Sukomoro, Magetan"
+  }
+  ```
+
+#### `DELETE /api/admin/farmers/:id`
+- **Aktor:** Admin Only (Hapus akun petani).
 
 ---
 
@@ -139,6 +152,18 @@
 - **Aktor:** Admin Only
 - **Query Filter Opsional:** `?farmer_id=...&health_status=Sehat&age=30`
 
+#### `PUT /api/admin/trees/:id`
+- **Aktor:** Admin Only
+- **Fungsi:** Update data pohon.
+- **Request Body:**
+  ```json
+  {
+    "locationBlock": "Blok B-05",
+    "healthStatus": "Sehat",
+    "variety": "Jeruk Bali Merah Premium"
+  }
+  ```
+
 ---
 
 ### 3. Jadwal Pemupukan & Offline Sync
@@ -150,10 +175,29 @@
 #### `PUT /api/fertilizations/:id/complete`
 - **Aktor:** Petani
 - **Fungsi:** Tandai pemupukan selesai dan catat tanggal aktual.
+- **Request Body (Opsional):**
+  ```json
+  {
+    "notes": "Pemupukan dosis 2kg pupuk kandang organik selesai dilakukan.",
+    "actualDate": "2026-03-10"
+  }
+  ```
 
 #### `POST /api/sync/fertilizations`
 - **Aktor:** Petani (**FR-3 Offline Sync**)
 - **Fungsi:** Batch sync data pemupukan yang disimpan di IndexedDB saat offline.
+- **Request Body:**
+  ```json
+  {
+    "syncItems": [
+      {
+        "fertilizationId": "f8a7e3d1-4b2c-4d5e-8f9a-1b2c3d4e5f6a",
+        "completedAt": "2026-03-10T08:30:00.000Z",
+        "notes": "Sync dari offline IndexedDB"
+      }
+    ]
+  }
+  ```
 
 ---
 
@@ -195,7 +239,7 @@
     "message": "Bagaimana cara penanganan bercak ganggang pada daun jeruk bali saya?",
     "db_context": "Hasil scan terakhir: Terindikasi Bercak Ganggang (Cephaleuros virescens) dengan keyakinan 98.45%.",
     "treeId": "c1f76d90-a54b-4c4b-8fd1-253380e224e7",
-    "image_url": "http://localhost:3000/uploads/leaves/scan_daun_pomelo.jpg",
+    "image_url": "https://api.maximaa.tech/uploads/leaves/scan_daun_pomelo.jpg",
     "history": [
       {
         "role": "user",
@@ -228,7 +272,7 @@
   ```json
   {
     "status": "error",
-    "message": "Layanan AI Chatbot (http://localhost:5000/api/v1/chat) tidak dapat dihubungi. Pastikan server AI Engineer sedang berjalan."
+    "message": "Layanan AI Chatbot (https://ai.maximaa.tech/api/v1/chat) tidak dapat dihubungi. Pastikan server AI Engineer sedang berjalan."
   }
   ```
 
@@ -239,6 +283,16 @@
 #### `POST /api/harvests/report`
 - **Aktor:** Petani
 - **Fungsi:** Kirim laporan siap panen ke antrean verifikasi Admin (status: `"Pending"`).
+- **Request Body:**
+  ```json
+  {
+    "treeId": "c1f76d90-a54b-4c4b-8fd1-253380e224e7",
+    "harvestDate": "2026-03-25",
+    "quantityKg": 150.5,
+    "fruitCount": 300,
+    "notes": "Panen kualitas super grade A"
+  }
+  ```
 
 #### `GET /api/admin/harvests`
 - **Aktor:** Admin Only
@@ -256,8 +310,8 @@
     "data": {
       "status": "Verified",
       "batchId": "BATCH-PHNBBS010-20260325-1420",
-      "traceUrl": "http://localhost:3000/api/public/trace/BATCH-PHNBBS010-20260325-1420",
-      "pdfDownloadUrl": "http://localhost:3000/uploads/pdf/batch-BATCH-PHNBBS010-20260325-1420.pdf"
+      "traceUrl": "https://api.maximaa.tech/api/public/trace/BATCH-PHNBBS010-20260325-1420",
+      "pdfDownloadUrl": "https://api.maximaa.tech/uploads/pdf/batch-BATCH-PHNBBS010-20260325-1420.pdf"
     }
   }
   ```
@@ -285,6 +339,55 @@
 
 #### `GET /api/admin/dashboard/overview`
 - **Fungsi:** Ringkasan alert AI terkini dan agenda pemupukan mendatang.
+
+---
+
+### 9. Daftar Link Endpoint Produksi
+
+- **Health & Root**:
+  - `GET` https://api.maximaa.tech/
+  - `GET` https://api.maximaa.tech/health
+
+- **Authentication & Manajemen Petani**:
+  - `POST` https://api.maximaa.tech/api/auth/login
+  - `GET` https://api.maximaa.tech/api/auth/me
+  - `GET` https://api.maximaa.tech/api/admin/farmers
+  - `POST` https://api.maximaa.tech/api/admin/farmers
+  - `PUT` https://api.maximaa.tech/api/admin/farmers/:id
+  - `DELETE` https://api.maximaa.tech/api/admin/farmers/:id
+
+- **Manajemen Pohon & Lahan**:
+  - `GET` https://api.maximaa.tech/api/trees/my-trees
+  - `POST` https://api.maximaa.tech/api/trees
+  - `GET` https://api.maximaa.tech/api/admin/trees
+  - `POST` https://api.maximaa.tech/api/admin/trees
+  - `PUT` https://api.maximaa.tech/api/admin/trees/:id
+  - `DELETE` https://api.maximaa.tech/api/admin/trees/:id
+
+- **Jadwal Pemupukan & Offline Sync**:
+  - `GET` https://api.maximaa.tech/api/fertilizations/schedule
+  - `PUT` https://api.maximaa.tech/api/fertilizations/:id/complete
+  - `GET` https://api.maximaa.tech/api/admin/fertilizations
+  - `POST` https://api.maximaa.tech/api/sync/fertilizations
+
+- **Deteksi AI & Chatbot**:
+  - `POST` https://api.maximaa.tech/api/ai/detect
+  - `POST` https://api.maximaa.tech/api/sync/ai-detect
+  - `GET` https://api.maximaa.tech/api/admin/ai-logs
+  - `POST` https://api.maximaa.tech/api/v1/chat
+
+- **Lapor Panen & Cetak QR Code**:
+  - `POST` https://api.maximaa.tech/api/harvests/report
+  - `GET` https://api.maximaa.tech/api/admin/harvests
+  - `POST` https://api.maximaa.tech/api/admin/harvests/:id/verify-and-qr
+
+- **Scan Konsumen & Traceability Journey**:
+  - `GET` https://api.maximaa.tech/api/public/trace/:identifier
+
+- **Dashboard & Analitik Admin**:
+  - `GET` https://api.maximaa.tech/api/admin/dashboard/stats
+  - `GET` https://api.maximaa.tech/api/admin/dashboard/trend
+  - `GET` https://api.maximaa.tech/api/admin/dashboard/overview
 
 ---
 
@@ -333,22 +436,27 @@ Atau jalankan skrip PowerShell otomatis:
 
 ## 🐳 Menjalankan dengan Docker & Database
 
-### Konfigurasi `.env` (Microservice AI Engineer):
+### Konfigurasi `.env` (Produksi VPS / Local):
 ```env
 PORT=3000
-NODE_ENV=development
-BASE_URL=http://localhost:3000
+NODE_ENV=production
+BASE_URL=https://api.maximaa.tech
 
 # Database Configuration (PostgreSQL)
-DATABASE_URL=postgresql://postgres:postgrespassword@localhost:5432/be_maxima?schema=public
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=pomelomaxima
+POSTGRES_DB=be_maxima
+POSTGRES_EXTERNAL_PORT=5433
+
+DATABASE_URL="postgresql://postgres:pomelomaxima@postgres:5432/be_maxima?schema=public"
 
 # JWT Authentication
-JWT_SECRET=maxima_super_secret_jwt_key_2026
+JWT_SECRET=super_secret_jwt_key_production_maxima_2026
 JWT_EXPIRES_IN=7d
 
 # Microservice Flask AI Service URL (Managed by AI Engineer)
-AI_SERVICE_URL=http://localhost:5000/api/v1/predict
-AI_CHAT_URL=http://localhost:5000/api/v1/chat
+AI_SERVICE_URL=https://ai.maximaa.tech/api/v1/predict
+AI_CHAT_URL=https://ai.maximaa.tech/api/v1/chat
 ```
 
 ### Menjalankan Seluruh Stack dengan Docker:
@@ -362,3 +470,4 @@ docker compose up -d --build
 - **Petani 2:** `petani2@maxima.com` / `Petani123!`
 - **Batch Sehat (Siap Scan):** `BATCH-BBS001-20260315`
 - **Batch Sakit (Uji Standar AI):** `BATCH-SICK-20260320`
+
