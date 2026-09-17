@@ -1,0 +1,44 @@
+name: 🚀 Deploy BE-Maxima to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to Production VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔔 Notify Deploy Start
+        run: echo "Starting deployment of BE-Maxima to VPS..."
+
+      - name: 🔐 SSH & Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            set -e
+
+            echo "📁 Masuk ke direktori project..."
+            cd /var/www/be-maxima
+
+            echo "⬇️ Pull kode terbaru dari GitHub..."
+            git pull origin main
+
+            echo "🐳 Rebuild & Restart Docker container..."
+            docker compose down app
+            docker compose build --no-cache app
+            docker compose up -d app
+
+            echo "⏳ Menunggu container siap..."
+            sleep 8
+
+            echo "🔍 Cek status container..."
+            docker ps --filter "name=maxima_api" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+            echo "✅ Deployment selesai!"

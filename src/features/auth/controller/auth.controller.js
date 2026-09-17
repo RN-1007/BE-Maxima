@@ -6,8 +6,9 @@ const { successResponse, errorResponse } = require('../../../utils/response');
  */
 const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    const result = await authService.login(email, password);
+    const { username, email, identifier, password } = req.body;
+    const loginIdentifier = username || email || identifier;
+    const result = await authService.login(loginIdentifier, password);
     return successResponse(res, 'Login berhasil.', result);
   } catch (error) {
     next(error);
