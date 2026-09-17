@@ -5,26 +5,26 @@ const { JWT_SECRET, JWT_EXPIRES_IN } = require('../../../config/env');
 
 /**
  * Authenticate user and generate JWT token
- * @param {string} email
+ * @param {string} identifier - Email or Username
  * @param {string} password
  */
-const login = async (email, password) => {
-  if (!email || !password) {
-    const error = new Error('Email dan kata sandi wajib diisi.');
+const login = async (identifier, password) => {
+  if (!identifier || !password) {
+    const error = new Error('Username / Email dan kata sandi wajib diisi.');
     error.statusCode = 400;
     throw error;
   }
 
-  const user = await authModel.findUserByEmail(email);
+  const user = await authModel.findUserByUsernameOrEmail(identifier);
   if (!user) {
-    const error = new Error('Kombinasi email atau kata sandi tidak valid.');
+    const error = new Error('Kombinasi username/email atau kata sandi tidak valid.');
     error.statusCode = 401;
     throw error;
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
-    const error = new Error('Kombinasi email atau kata sandi tidak valid.');
+    const error = new Error('Kombinasi username/email atau kata sandi tidak valid.');
     error.statusCode = 401;
     throw error;
   }
@@ -32,6 +32,7 @@ const login = async (email, password) => {
   const token = jwt.sign(
     {
       id: user.id,
+      username: user.username,
       email: user.email,
       role: user.role,
     },
@@ -43,6 +44,7 @@ const login = async (email, password) => {
     token,
     user: {
       id: user.id,
+      username: user.username,
       email: user.email,
       name: user.name,
       role: user.role,

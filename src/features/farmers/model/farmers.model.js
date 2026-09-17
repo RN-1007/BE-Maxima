@@ -9,6 +9,7 @@ const findAllFarmers = async () => {
     where: { role: ROLES.FARMER },
     select: {
       id: true,
+      username: true,
       email: true,
       name: true,
       role: true,
@@ -39,6 +40,7 @@ const findFarmerById = async (id) => {
     },
     select: {
       id: true,
+      username: true,
       email: true,
       name: true,
       role: true,
@@ -70,6 +72,7 @@ const createFarmer = async (data) => {
     },
     select: {
       id: true,
+      username: true,
       email: true,
       name: true,
       role: true,
@@ -91,6 +94,7 @@ const updateFarmer = async (id, data) => {
     data,
     select: {
       id: true,
+      username: true,
       email: true,
       name: true,
       role: true,

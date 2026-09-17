@@ -27,24 +27,39 @@ const getFarmerById = async (id) => {
  * Create new farmer account
  * @param {Object} data
  */
-const createFarmer = async ({ email, password, name, phone, location }) => {
-  if (!email || !password || !name) {
-    const error = new Error('Email, kata sandi, dan nama petani wajib diisi.');
+const createFarmer = async ({ username, email, password, name, phone, location }) => {
+  const userIdentifier = username || email;
+  if (!userIdentifier || !password || !name) {
+    const error = new Error('Username, kata sandi, dan nama petani wajib diisi.');
     error.statusCode = 400;
     throw error;
   }
 
-  const existing = await authModel.findUserByEmail(email);
-  if (existing) {
-    const error = new Error('Email sudah terdaftar. Gunakan email lain.');
-    error.statusCode = 409;
-    throw error;
+  // Check username if provided
+  if (username) {
+    const existingUser = await authModel.findUserByUsername(username);
+    if (existingUser) {
+      const error = new Error('Username sudah terdaftar. Gunakan username lain.');
+      error.statusCode = 409;
+      throw error;
+    }
+  }
+
+  // Check email if provided
+  if (email) {
+    const existingEmail = await authModel.findUserByEmail(email);
+    if (existingEmail) {
+      const error = new Error('Email sudah terdaftar. Gunakan email lain.');
+      error.statusCode = 409;
+      throw error;
+    }
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
   return await farmersModel.createFarmer({
-    email,
+    username: username || null,
+    email: email || null,
     password: hashedPassword,
     name,
     phone,
@@ -57,7 +72,7 @@ const createFarmer = async ({ email, password, name, phone, location }) => {
  * @param {string} id
  * @param {Object} updateData
  */
-const updateFarmer = async (id, { email, password, name, phone, location }) => {
+const updateFarmer = async (id, { username, email, password, name, phone, location }) => {
   const existingFarmer = await farmersModel.findFarmerById(id);
   if (!existingFarmer) {
     const error = new Error('Akun petani tidak ditemukan.');
@@ -69,6 +84,16 @@ const updateFarmer = async (id, { email, password, name, phone, location }) => {
   if (name !== undefined) dataToUpdate.name = name;
   if (phone !== undefined) dataToUpdate.phone = phone;
   if (location !== undefined) dataToUpdate.location = location;
+
+  if (username && username !== existingFarmer.username) {
+    const userTaken = await authModel.findUserByUsername(username);
+    if (userTaken) {
+      const error = new Error('Username sudah digunakan oleh akun lain.');
+      error.statusCode = 409;
+      throw error;
+    }
+    dataToUpdate.username = username;
+  }
 
   if (email && email !== existingFarmer.email) {
     const emailTaken = await authModel.findUserByEmail(email);
