@@ -1,4 +1,4 @@
-name: 🚀 Deploy BE-Maxima to VPS
+name: Deploy to VPS
 
 on:
   push:
