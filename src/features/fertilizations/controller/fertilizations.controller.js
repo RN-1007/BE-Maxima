@@ -7,8 +7,8 @@ const { successResponse } = require('../../../utils/response');
 const getSchedule = async (req, res, next) => {
   try {
     const farmerId = req.user.id;
-    const schedule = await fertilizationsService.getFarmerSchedule(farmerId, req.query);
-    return successResponse(res, 'Berhasil mengambil to-do list jadwal pemupukan.', schedule);
+    const { schedules, meta } = await fertilizationsService.getFarmerSchedule(farmerId, req.query);
+    return successResponse(res, 'Berhasil mengambil to-do list jadwal pemupukan.', schedules, 200, meta);
   } catch (error) {
     next(error);
   }
@@ -46,8 +46,8 @@ const syncFertilizations = async (req, res, next) => {
  */
 const getAllSchedules = async (req, res, next) => {
   try {
-    const schedules = await fertilizationsService.getAllSchedules(req.query);
-    return successResponse(res, 'Berhasil mengambil seluruh jadwal pemupukan kebun.', schedules);
+    const { schedules, meta } = await fertilizationsService.getAllSchedules(req.query);
+    return successResponse(res, 'Berhasil mengambil seluruh jadwal pemupukan kebun.', schedules, 200, meta);
   } catch (error) {
     next(error);
   }

@@ -17,7 +17,8 @@
     "test:fertilizations": "node test/04_fertilizations.test.js",
     "test:ai": "node test/05_ai.test.js",
     "test:harvests": "node test/06_harvests.test.js",
-    "test:traceability": "node test/07_traceability.test.js"
+    "test:traceability": "node test/07_traceability.test.js",
+    "test:pagination": "node test/08_pagination.test.js"
   },
   "repository": {
     "type": "git",
@@ -43,7 +44,8 @@
     "morgan": "^1.12.0",
     "multer": "^2.3.0",
     "pdfkit": "^0.20.2",
-    "qrcode": "^1.5.4"
+    "qrcode": "^1.5.4",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.14",

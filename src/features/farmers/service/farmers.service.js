@@ -1,12 +1,26 @@
 const bcrypt = require('bcryptjs');
 const farmersModel = require('../model/farmers.model');
 const authModel = require('../../auth/model/auth.model');
+const { getPaginationParams, formatPaginationMeta } = require('../../../utils/pagination');
 
 /**
- * Get list of all farmers
+ * Get list of all farmers with pagination
+ * @param {Object} [query]
  */
-const getAllFarmers = async () => {
-  return await farmersModel.findAllFarmers();
+const getAllFarmers = async (query = {}) => {
+  const { page, limit, skip } = getPaginationParams(query);
+  const { total, items } = await farmersModel.findAllFarmers({
+    skip,
+    take: limit,
+    search: query.search,
+  });
+
+  const meta = formatPaginationMeta(total, page, limit);
+
+  return {
+    farmers: items,
+    meta,
+  };
 };
 
 /**

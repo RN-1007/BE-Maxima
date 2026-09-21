@@ -56,43 +56,54 @@ const batchInsertAiLogs = async (logs) => {
 };
 
 /**
- * Get all AI detection logs for Admin
+ * Get all AI detection logs for Admin (supports pagination & filters)
  * @param {Object} [filter]
+ * @param {Object} [pagination]
+ * @param {number} [pagination.skip]
+ * @param {number} [pagination.take]
  */
-const findAllAiLogs = async (filter = {}) => {
+const findAllAiLogs = async (filter = {}, pagination = {}) => {
+  const { skip, take } = pagination;
   const whereClause = {};
   if (filter.isSick !== undefined) {
     whereClause.isSick = filter.isSick === 'true' || filter.isSick === true;
   }
-  if (filter.treeId) {
-    whereClause.treeId = filter.treeId;
+  if (filter.treeId || filter.tree_id) {
+    whereClause.treeId = filter.treeId || filter.tree_id;
   }
-  if (filter.farmerId) {
-    whereClause.farmerId = filter.farmerId;
+  if (filter.farmerId || filter.farmer_id) {
+    whereClause.farmerId = filter.farmerId || filter.farmer_id;
   }
 
-  return await prisma.aiLog.findMany({
-    where: whereClause,
-    include: {
-      tree: {
-        select: {
-          id: true,
-          treeCode: true,
-          locationBlock: true,
-          healthStatus: true,
+  const [total, items] = await prisma.$transaction([
+    prisma.aiLog.count({ where: whereClause }),
+    prisma.aiLog.findMany({
+      where: whereClause,
+      include: {
+        tree: {
+          select: {
+            id: true,
+            treeCode: true,
+            locationBlock: true,
+            healthStatus: true,
+          },
+        },
+        farmer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            location: true,
+          },
         },
       },
-      farmer: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          location: true,
-        },
-      },
-    },
-    orderBy: { detectedAt: 'desc' },
-  });
+      orderBy: { detectedAt: 'desc' },
+      ...(skip !== undefined ? { skip } : {}),
+      ...(take !== undefined ? { take } : {}),
+    }),
+  ]);
+
+  return { total, items };
 };
 
 /**

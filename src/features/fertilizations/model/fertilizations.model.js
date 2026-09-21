@@ -2,11 +2,15 @@ const prisma = require('../../../config/database');
 const { FERTILIZATION_STATUS } = require('../../../config/constants');
 
 /**
- * Get fertilization schedules for a farmer
+ * Get fertilization schedules for a farmer (supports pagination & filters)
  * @param {string} farmerId
  * @param {Object} [filter]
+ * @param {Object} [pagination]
+ * @param {number} [pagination.skip]
+ * @param {number} [pagination.take]
  */
-const findSchedulesByFarmerId = async (farmerId, filter = {}) => {
+const findSchedulesByFarmerId = async (farmerId, filter = {}, pagination = {}) => {
+  const { skip, take } = pagination;
   const whereClause = {
     tree: {
       farmerId,
@@ -27,21 +31,28 @@ const findSchedulesByFarmerId = async (farmerId, filter = {}) => {
     }
   }
 
-  return await prisma.fertilization.findMany({
-    where: whereClause,
-    include: {
-      tree: {
-        select: {
-          id: true,
-          treeCode: true,
-          locationBlock: true,
-          healthStatus: true,
-          plantingDate: true,
+  const [total, items] = await prisma.$transaction([
+    prisma.fertilization.count({ where: whereClause }),
+    prisma.fertilization.findMany({
+      where: whereClause,
+      include: {
+        tree: {
+          select: {
+            id: true,
+            treeCode: true,
+            locationBlock: true,
+            healthStatus: true,
+            plantingDate: true,
+          },
         },
       },
-    },
-    orderBy: { scheduledDate: 'asc' },
-  });
+      orderBy: { scheduledDate: 'asc' },
+      ...(skip !== undefined ? { skip } : {}),
+      ...(take !== undefined ? { take } : {}),
+    }),
+  ]);
+
+  return { total, items };
 };
 
 /**
@@ -142,10 +153,14 @@ const syncBatchFertilizations = async (items) => {
 };
 
 /**
- * Get all fertilization schedules (Admin)
+ * Get all fertilization schedules (Admin) (supports pagination & filters)
  * @param {Object} [filter]
+ * @param {Object} [pagination]
+ * @param {number} [pagination.skip]
+ * @param {number} [pagination.take]
  */
-const findAllSchedules = async (filter = {}) => {
+const findAllSchedules = async (filter = {}, pagination = {}) => {
+  const { skip, take } = pagination;
   const whereClause = {};
 
   if (filter.status) {
@@ -162,28 +177,35 @@ const findAllSchedules = async (filter = {}) => {
     whereClause.treeId = filter.treeId;
   }
 
-  return await prisma.fertilization.findMany({
-    where: whereClause,
-    include: {
-      tree: {
-        select: {
-          id: true,
-          treeCode: true,
-          locationBlock: true,
-          healthStatus: true,
-          variety: true,
-          farmer: {
-            select: {
-              id: true,
-              name: true,
-              location: true,
+  const [total, items] = await prisma.$transaction([
+    prisma.fertilization.count({ where: whereClause }),
+    prisma.fertilization.findMany({
+      where: whereClause,
+      include: {
+        tree: {
+          select: {
+            id: true,
+            treeCode: true,
+            locationBlock: true,
+            healthStatus: true,
+            variety: true,
+            farmer: {
+              select: {
+                id: true,
+                name: true,
+                location: true,
+              },
             },
           },
         },
       },
-    },
-    orderBy: { scheduledDate: 'asc' },
-  });
+      orderBy: { scheduledDate: 'asc' },
+      ...(skip !== undefined ? { skip } : {}),
+      ...(take !== undefined ? { take } : {}),
+    }),
+  ]);
+
+  return { total, items };
 };
 
 module.exports = {

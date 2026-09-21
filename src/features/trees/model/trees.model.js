@@ -75,53 +75,90 @@ const findTreeById = async (id) => {
 };
 
 /**
- * Find trees owned by a specific farmer (FR-2 Data Isolation)
+ * Find trees owned by a specific farmer (FR-2 Data Isolation) (supports pagination & filter)
  * @param {string} farmerId
+ * @param {Object} [options]
+ * @param {number} [options.skip]
+ * @param {number} [options.take]
+ * @param {string} [options.healthStatus]
+ * @param {string} [options.search]
  */
-const findTreesByFarmerId = async (farmerId) => {
-  return await prisma.tree.findMany({
-    where: { farmerId },
-    include: {
-      _count: {
-        select: {
-          fertilizations: true,
-          aiLogs: true,
-          harvests: true,
+const findTreesByFarmerId = async (farmerId, options = {}) => {
+  const { skip, take, healthStatus, search } = options;
+  const whereClause = { farmerId };
+
+  if (healthStatus) {
+    whereClause.healthStatus = healthStatus;
+  }
+
+  if (search) {
+    whereClause.OR = [
+      { treeCode: { contains: search, mode: 'insensitive' } },
+      { locationBlock: { contains: search, mode: 'insensitive' } },
+      { variety: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+
+  const [total, items] = await prisma.$transaction([
+    prisma.tree.count({ where: whereClause }),
+    prisma.tree.findMany({
+      where: whereClause,
+      include: {
+        _count: {
+          select: {
+            fertilizations: true,
+            aiLogs: true,
+            harvests: true,
+          },
         },
       },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+      orderBy: { createdAt: 'desc' },
+      ...(skip !== undefined ? { skip } : {}),
+      ...(take !== undefined ? { take } : {}),
+    }),
+  ]);
+
+  return { total, items };
 };
 
 /**
- * Find all trees with filter criteria for Admin
- * @param {Object} filters
- * @param {string} [filters.farmerId]
- * @param {string} [filters.healthStatus]
+ * Find all trees with filter criteria for Admin (supports pagination)
+ * @param {Object} whereClause
+ * @param {Object} [pagination]
+ * @param {number} [pagination.skip]
+ * @param {number} [pagination.take]
  */
-const findAllTrees = async (whereClause) => {
-  return await prisma.tree.findMany({
-    where: whereClause,
-    include: {
-      farmer: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          location: true,
+const findAllTrees = async (whereClause = {}, pagination = {}) => {
+  const { skip, take } = pagination;
+
+  const [total, items] = await prisma.$transaction([
+    prisma.tree.count({ where: whereClause }),
+    prisma.tree.findMany({
+      where: whereClause,
+      include: {
+        farmer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            location: true,
+          },
+        },
+        _count: {
+          select: {
+            fertilizations: true,
+            aiLogs: true,
+            harvests: true,
+          },
         },
       },
-      _count: {
-        select: {
-          fertilizations: true,
-          aiLogs: true,
-          harvests: true,
-        },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+      orderBy: { createdAt: 'desc' },
+      ...(skip !== undefined ? { skip } : {}),
+      ...(take !== undefined ? { take } : {}),
+    }),
+  ]);
+
+  return { total, items };
 };
 
 /**

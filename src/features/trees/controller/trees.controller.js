@@ -20,8 +20,8 @@ const addTree = async (req, res, next) => {
 const getMyTrees = async (req, res, next) => {
   try {
     const farmerId = req.user.id;
-    const trees = await treesService.getMyTrees(farmerId);
-    return successResponse(res, 'Berhasil mengambil ringkasan data pohon milik sendiri.', trees);
+    const { trees, meta } = await treesService.getMyTrees(farmerId, req.query);
+    return successResponse(res, 'Berhasil mengambil ringkasan data pohon milik sendiri.', trees, 200, meta);
   } catch (error) {
     next(error);
   }
@@ -32,8 +32,8 @@ const getMyTrees = async (req, res, next) => {
  */
 const getAdminTrees = async (req, res, next) => {
   try {
-    const trees = await treesService.getAdminTrees(req.query);
-    return successResponse(res, 'Berhasil mengambil rekapitulasi pohon global.', trees);
+    const { trees, meta } = await treesService.getAdminTrees(req.query);
+    return successResponse(res, 'Berhasil mengambil rekapitulasi pohon global.', trees, 200, meta);
   } catch (error) {
     next(error);
   }

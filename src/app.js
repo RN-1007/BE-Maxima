@@ -22,6 +22,8 @@ const syncRoutes = require('./routes/sync.routes');
 const traceabilityRoutes = require('./features/traceability/traceability.routes');
 const chatRoutes = require('./features/ai/chat.routes');
 
+const { setupSwagger } = require('./config/swagger');
+
 const app = express();
 
 // Global Middlewares
@@ -33,13 +35,16 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static uploads (leaves images & PDF QR stickers)
 app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
 
+// Swagger API Documentation UI
+setupSwagger(app);
+
 // Health Check
 app.get('/', (req, res) => {
   res.json({
     status: 'online',
     service: 'BE-Maxima RESTful API',
     version: '1.0.0',
-    documentation: 'See Readme.md for endpoints specification and requirement',
+    documentation: '/api-docs',
   });
 });
 

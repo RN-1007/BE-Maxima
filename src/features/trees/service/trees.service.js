@@ -1,5 +1,6 @@
 const treesModel = require('../model/trees.model');
 const { DEFAULT_FERTILIZATION_PLAN, TREE_HEALTH } = require('../../../config/constants');
+const { getPaginationParams, formatPaginationMeta } = require('../../../utils/pagination');
 
 /**
  * Add a new tree and auto-generate fertilization schedule (FR-1)
@@ -107,15 +108,22 @@ const adminDeleteTree = async (id) => {
 };
 
 /**
- * Get trees owned by logged in farmer (FR-2 Data Isolation)
+ * Get trees owned by logged in farmer (FR-2 Data Isolation) (supports pagination)
  * @param {string} farmerId
+ * @param {Object} [query]
  */
-const getMyTrees = async (farmerId) => {
-  const trees = await treesModel.findTreesByFarmerId(farmerId);
+const getMyTrees = async (farmerId, query = {}) => {
+  const { page, limit, skip } = getPaginationParams(query);
+  const { total, items } = await treesModel.findTreesByFarmerId(farmerId, {
+    skip,
+    take: limit,
+    healthStatus: query.health_status || query.healthStatus,
+    search: query.search,
+  });
   const now = new Date();
 
   // Calculate age for each tree in days and months
-  return trees.map((tree) => {
+  const formattedTrees = items.map((tree) => {
     const ageInDays = Math.max(0, Math.floor((now - new Date(tree.plantingDate)) / (1000 * 60 * 60 * 24)));
     const ageInMonths = +(ageInDays / 30.4375).toFixed(1);
     return {
@@ -124,21 +132,31 @@ const getMyTrees = async (farmerId) => {
       ageInMonths,
     };
   });
+
+  const meta = formatPaginationMeta(total, page, limit);
+
+  return {
+    trees: formattedTrees,
+    meta,
+  };
 };
 
 /**
- * Global recap of all trees for Admin with query filters
+ * Global recap of all trees for Admin with query filters and pagination
  * @param {Object} query
  */
-const getAdminTrees = async ({ farmer_id, health_status, age }) => {
+const getAdminTrees = async (query = {}) => {
+  const { farmer_id, farmerId, health_status, healthStatus, age, search } = query;
   const whereClause = {};
 
-  if (farmer_id) {
-    whereClause.farmerId = farmer_id;
+  const targetFarmerId = farmer_id || farmerId;
+  if (targetFarmerId) {
+    whereClause.farmerId = targetFarmerId;
   }
 
-  if (health_status) {
-    whereClause.healthStatus = health_status;
+  const targetHealthStatus = health_status || healthStatus;
+  if (targetHealthStatus) {
+    whereClause.healthStatus = targetHealthStatus;
   }
 
   if (age) {
@@ -152,10 +170,19 @@ const getAdminTrees = async ({ farmer_id, health_status, age }) => {
     }
   }
 
-  const trees = await treesModel.findAllTrees(whereClause);
+  if (search) {
+    whereClause.OR = [
+      { treeCode: { contains: search, mode: 'insensitive' } },
+      { locationBlock: { contains: search, mode: 'insensitive' } },
+      { variety: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+
+  const { page, limit, skip } = getPaginationParams(query);
+  const { total, items } = await treesModel.findAllTrees(whereClause, { skip, take: limit });
   const now = new Date();
 
-  return trees.map((tree) => {
+  const formattedTrees = items.map((tree) => {
     const ageInDays = Math.max(0, Math.floor((now - new Date(tree.plantingDate)) / (1000 * 60 * 60 * 24)));
     const ageInMonths = +(ageInDays / 30.4375).toFixed(1);
     return {
@@ -164,6 +191,13 @@ const getAdminTrees = async ({ farmer_id, health_status, age }) => {
       ageInMonths,
     };
   });
+
+  const meta = formatPaginationMeta(total, page, limit);
+
+  return {
+    trees: formattedTrees,
+    meta,
+  };
 };
 
 /**
