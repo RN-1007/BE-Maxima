@@ -1,8 +1,9 @@
 const fertilizationsModel = require('../model/fertilizations.model');
 const { FERTILIZATION_STATUS } = require('../../../config/constants');
+const { getPaginationParams, formatPaginationMeta } = require('../../../utils/pagination');
 
 /**
- * Get farmer's fertilization schedules (to-do list / upcoming)
+ * Get farmer's fertilization schedules (to-do list / upcoming) with pagination
  * @param {string} farmerId
  * @param {Object} query
  */
@@ -18,13 +19,17 @@ const getFarmerSchedule = async (farmerId, query = {}) => {
     filter.endDate = query.endDate;
   }
 
-  const schedules = await fertilizationsModel.findSchedulesByFarmerId(farmerId, filter);
+  const { page, limit, skip } = getPaginationParams(query);
+  const { total, items } = await fertilizationsModel.findSchedulesByFarmerId(farmerId, filter, {
+    skip,
+    take: limit,
+  });
 
   // Group by status / urgency
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  const categorized = schedules.map((item) => {
+  const categorized = items.map((item) => {
     const schedDate = new Date(item.scheduledDate);
     let timingStatus = 'Mendatang';
     if (item.status === FERTILIZATION_STATUS.COMPLETED) {
@@ -41,7 +46,12 @@ const getFarmerSchedule = async (farmerId, query = {}) => {
     };
   });
 
-  return categorized;
+  const meta = formatPaginationMeta(total, page, limit);
+
+  return {
+    schedules: categorized,
+    meta,
+  };
 };
 
 /**
@@ -92,20 +102,21 @@ const syncFertilizations = async (farmerId, items) => {
 };
 
 /**
- * Get all fertilization schedules (Admin)
+ * Get all fertilization schedules (Admin) with pagination
  * @param {Object} query
  */
 const getAllSchedules = async (query = {}) => {
   const filter = {};
   if (query.status) filter.status = query.status;
-  if (query.farmerId) filter.farmerId = query.farmerId;
-  if (query.treeId) filter.treeId = query.treeId;
+  if (query.farmerId || query.farmer_id) filter.farmerId = query.farmerId || query.farmer_id;
+  if (query.treeId || query.tree_id) filter.treeId = query.treeId || query.tree_id;
 
-  const schedules = await fertilizationsModel.findAllSchedules(filter);
+  const { page, limit, skip } = getPaginationParams(query);
+  const { total, items } = await fertilizationsModel.findAllSchedules(filter, { skip, take: limit });
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  return schedules.map((item) => {
+  const categorized = items.map((item) => {
     const schedDate = new Date(item.scheduledDate);
     let timingStatus = 'Mendatang';
     if (item.status === FERTILIZATION_STATUS.COMPLETED) {
@@ -121,6 +132,13 @@ const getAllSchedules = async (query = {}) => {
       timingStatus,
     };
   });
+
+  const meta = formatPaginationMeta(total, page, limit);
+
+  return {
+    schedules: categorized,
+    meta,
+  };
 };
 
 module.exports = {

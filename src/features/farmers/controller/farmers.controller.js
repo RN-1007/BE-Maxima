@@ -6,8 +6,8 @@ const { successResponse } = require('../../../utils/response');
  */
 const getAllFarmers = async (req, res, next) => {
   try {
-    const farmers = await farmersService.getAllFarmers();
-    return successResponse(res, 'Berhasil mengambil daftar akun petani.', farmers);
+    const { farmers, meta } = await farmersService.getAllFarmers(req.query);
+    return successResponse(res, 'Berhasil mengambil daftar akun petani.', farmers, 200, meta);
   } catch (error) {
     next(error);
   }

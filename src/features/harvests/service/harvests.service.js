@@ -2,6 +2,7 @@ const harvestsModel = require('../model/harvests.model');
 const treesModel = require('../../trees/model/trees.model');
 const { generateBatchQRPDF } = require('../../../utils/pdf.generator');
 const { BASE_URL } = require('../../../config/env');
+const { getPaginationParams, formatPaginationMeta } = require('../../../utils/pagination');
 
 /**
  * Report harvest (Petani)
@@ -45,11 +46,19 @@ const reportHarvest = async (farmerId, { treeId, harvestDate, estimatedFruits, n
 };
 
 /**
- * Get all harvest reports (Admin)
- * @param {Object} query
+ * Get all harvest reports (Admin) with pagination
+ * @param {Object} [query]
  */
 const getAllHarvests = async (query = {}) => {
-  return await harvestsModel.findAllHarvests(query);
+  const { page, limit, skip } = getPaginationParams(query);
+  const { total, items } = await harvestsModel.findAllHarvests(query, { skip, take: limit });
+
+  const meta = formatPaginationMeta(total, page, limit);
+
+  return {
+    harvests: items,
+    meta,
+  };
 };
 
 /**

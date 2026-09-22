@@ -19,8 +19,8 @@ const reportHarvest = async (req, res, next) => {
  */
 const getAllHarvests = async (req, res, next) => {
   try {
-    const harvests = await harvestsService.getAllHarvests(req.query);
-    return successResponse(res, 'Berhasil mengambil daftar laporan panen.', harvests);
+    const { harvests, meta } = await harvestsService.getAllHarvests(req.query);
+    return successResponse(res, 'Berhasil mengambil daftar laporan panen.', harvests, 200, meta);
   } catch (error) {
     next(error);
   }

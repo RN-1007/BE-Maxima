@@ -5,6 +5,7 @@ const testFertilizations = require('./04_fertilizations.test');
 const testAI = require('./05_ai.test');
 const testHarvests = require('./06_harvests.test');
 const testTraceability = require('./07_traceability.test');
+const testPagination = require('./08_pagination.test');
 
 const suites = [
   { name: '1. Authentication & Profil', fn: testAuth },
@@ -14,6 +15,7 @@ const suites = [
   { name: '5. Deteksi AI Gateway & Log (FR-5)', fn: testAI },
   { name: '6. Lapor Panen & Cetak QR PDF (FR-4)', fn: testHarvests },
   { name: '7. Scan Traceability & Gerbang Logika AI', fn: testTraceability },
+  { name: '8. Pagination & Filtering', fn: testPagination },
 ];
 
 async function runAllSuites() {
@@ -42,7 +44,7 @@ async function runAllSuites() {
   console.log('======================================================');
   console.table(results);
   console.log(`⏱️ Total Waktu Eksekusi: ${totalDuration}`);
-  console.log('🎉 SEMUA 7 MODUL SUITE PENGUJIAN LULUS DENGAN SUKSES 100%!\n');
+  console.log('🎉 SEMUA 8 MODUL SUITE PENGUJIAN LULUS DENGAN SUKSES 100%!\n');
 }
 
 runAllSuites().catch((err) => {

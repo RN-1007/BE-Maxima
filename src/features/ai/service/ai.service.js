@@ -5,6 +5,7 @@ const aiModel = require('../model/ai.model');
 const treesModel = require('../../trees/model/trees.model');
 const { AI_SERVICE_URL } = require('../../../config/env');
 const { TREE_HEALTH } = require('../../../config/constants');
+const { getPaginationParams, formatPaginationMeta } = require('../../../utils/pagination');
 
 /**
  * Forward image to Flask AI Microservice (Two-Step Verification Gatekeeper + Expert)
@@ -235,15 +236,24 @@ const syncAiDetectBatch = async (farmerId, logs) => {
 };
 
 /**
- * Get all AI detection logs for Admin
- * @param {Object} query
+ * Get all AI detection logs for Admin with pagination
+ * @param {Object} [query]
  */
-const getAdminAiLogs = async (query) => {
-  const logs = await aiModel.findAllAiLogs(query);
-  return logs.map((log) => ({
+const getAdminAiLogs = async (query = {}) => {
+  const { page, limit, skip } = getPaginationParams(query);
+  const { total, items } = await aiModel.findAllAiLogs(query, { skip, take: limit });
+
+  const formattedLogs = items.map((log) => ({
     ...log,
     severity: determineSeverity(log.isSick, log.confidence, log.result),
   }));
+
+  const meta = formatPaginationMeta(total, page, limit);
+
+  return {
+    logs: formattedLogs,
+    meta,
+  };
 };
 
 module.exports = {

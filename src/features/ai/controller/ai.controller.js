@@ -34,8 +34,8 @@ const syncAiDetect = async (req, res, next) => {
  */
 const getAdminAiLogs = async (req, res, next) => {
   try {
-    const logs = await aiService.getAdminAiLogs(req.query);
-    return successResponse(res, 'Berhasil mengambil riwayat deteksi AI global.', logs);
+    const { logs, meta } = await aiService.getAdminAiLogs(req.query);
+    return successResponse(res, 'Berhasil mengambil riwayat deteksi AI global.', logs, 200, meta);
   } catch (error) {
     next(error);
   }

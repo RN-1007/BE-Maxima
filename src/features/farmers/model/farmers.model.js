@@ -2,30 +2,55 @@ const prisma = require('../../../config/database');
 const { ROLES } = require('../../../config/constants');
 
 /**
- * Get all farmers with their profile and tree summary
+ * Get all farmers with their profile and tree summary (supports pagination & search)
+ * @param {Object} [options]
+ * @param {number} [options.skip]
+ * @param {number} [options.take]
+ * @param {string} [options.search]
  */
-const findAllFarmers = async () => {
-  return await prisma.user.findMany({
-    where: { role: ROLES.FARMER },
-    select: {
-      id: true,
-      username: true,
-      email: true,
-      name: true,
-      role: true,
-      phone: true,
-      location: true,
-      createdAt: true,
-      updatedAt: true,
-      _count: {
-        select: {
-          trees: true,
-          harvests: true,
+const findAllFarmers = async (options = {}) => {
+  const { skip, take, search } = options;
+  const whereClause = {
+    role: ROLES.FARMER,
+  };
+
+  if (search) {
+    whereClause.OR = [
+      { name: { contains: search, mode: 'insensitive' } },
+      { email: { contains: search, mode: 'insensitive' } },
+      { username: { contains: search, mode: 'insensitive' } },
+      { location: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+
+  const [total, items] = await prisma.$transaction([
+    prisma.user.count({ where: whereClause }),
+    prisma.user.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        name: true,
+        role: true,
+        phone: true,
+        location: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: {
+          select: {
+            trees: true,
+            harvests: true,
+          },
         },
       },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+      orderBy: { createdAt: 'desc' },
+      ...(skip !== undefined ? { skip } : {}),
+      ...(take !== undefined ? { take } : {}),
+    }),
+  ]);
+
+  return { total, items };
 };
 
 /**

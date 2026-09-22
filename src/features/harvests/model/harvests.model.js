@@ -57,40 +57,54 @@ const findHarvestById = async (id) => {
 };
 
 /**
- * Find all harvest reports for Admin with optional status filter
+ * Find all harvest reports for Admin with optional status filter (supports pagination)
  * @param {Object} [filter]
+ * @param {Object} [pagination]
+ * @param {number} [pagination.skip]
+ * @param {number} [pagination.take]
  */
-const findAllHarvests = async (filter = {}) => {
+const findAllHarvests = async (filter = {}, pagination = {}) => {
+  const { skip, take } = pagination;
   const whereClause = {};
   if (filter.status) {
     whereClause.status = filter.status;
   }
-  if (filter.farmerId) {
-    whereClause.farmerId = filter.farmerId;
+  if (filter.farmerId || filter.farmer_id) {
+    whereClause.farmerId = filter.farmerId || filter.farmer_id;
+  }
+  if (filter.treeId || filter.tree_id) {
+    whereClause.treeId = filter.treeId || filter.tree_id;
   }
 
-  return await prisma.harvest.findMany({
-    where: whereClause,
-    include: {
-      tree: {
-        select: {
-          id: true,
-          treeCode: true,
-          locationBlock: true,
-          healthStatus: true,
+  const [total, items] = await prisma.$transaction([
+    prisma.harvest.count({ where: whereClause }),
+    prisma.harvest.findMany({
+      where: whereClause,
+      include: {
+        tree: {
+          select: {
+            id: true,
+            treeCode: true,
+            locationBlock: true,
+            healthStatus: true,
+          },
+        },
+        farmer: {
+          select: {
+            id: true,
+            name: true,
+            location: true,
+            email: true,
+          },
         },
       },
-      farmer: {
-        select: {
-          id: true,
-          name: true,
-          location: true,
-          email: true,
-        },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+      orderBy: { createdAt: 'desc' },
+      ...(skip !== undefined ? { skip } : {}),
+      ...(take !== undefined ? { take } : {}),
+    }),
+  ]);
+
+  return { total, items };
 };
 
 /**
